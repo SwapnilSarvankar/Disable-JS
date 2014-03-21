@@ -17,7 +17,7 @@ function disable_js_js_alter(&$js) {
   if (variable_get('disable_js_' . $theme . '_all', FALSE)) {
     $disable_files = disable_js_get_js_list();
   }
-  // Remove selected js files
+  // Remove selected js files.
   else {
     if ($modules = variable_get('disable_js_' . $theme . '_modules', array())) {
       $disable_files = array_merge($disable_files, disable_js_get_js_list($modules));
@@ -86,21 +86,27 @@ function disable_js_form_system_theme_settings_alter(&$form, &$form_state, $form
   }
 }
 
+/**
+ * Implements hook_form_submit().
+ */
 function disable_js_form_submit($form, &$form_state) {
   $theme = $form_state['values']['disable_js_theme'];
 
-  //All files.
+  // All files.
   variable_set('disable_js_' . $theme . '_all', $form_state['values']['disable_js_' . $theme . '_all']);
 
-  //Modules.
+  // Modules.
   $modules = array_filter($form_state['values']['disable_js_' . $theme . '_modules']);
   variable_set('disable_js_' . $theme . '_modules', $modules);
 
-  //Files.
+  // Files.
   $files = array_filter($form_state['values']['disable_js_' . $theme . '_files']);
   variable_set('disable_js_' . $theme . '_files', $files);
 }
 
+/**
+ * Retrieve enabled module list.
+ */
 function disable_js_get_modules_list($options = FALSE) {
   $modules = $options ? system_list('module_enabled') : module_list();
   asort($modules);
@@ -108,6 +114,9 @@ function disable_js_get_modules_list($options = FALSE) {
   return $modules;
 }
 
+/**
+ * Disable the unwanted  JS.
+ */
 function disable_js_get_js_list($filter = array()) {
   $files = array();
   $enabled_modules = disable_js_get_modules_list(TRUE);
@@ -130,4 +139,3 @@ function disable_js_get_js_list($filter = array()) {
 
   return $files;
 }
-
