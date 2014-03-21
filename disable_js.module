@@ -1,0 +1,126 @@
+<?php
+
+/**
+ * Implements hook_js_alter().
+ */
+function disable_js_js_alter(&$js) {
+  global $theme;
+
+  $disable_files = array();
+
+  // remove all js files from contrib and core modules
+  if ( variable_get('disable_js_' . $theme . '_all', FALSE) ) {
+    $disable_files = disable_js_get_js_list();
+  }
+  // remove selected js files
+  else {
+    if ( $modules = variable_get('disable_js_' . $theme . '_modules', array()) ) {
+      $disable_files = array_merge($disable_files, disable_js_get_js_list($modules));
+    }
+
+    if ( $files = variable_get('disable_js_' . $theme . '_files', array()) ) {
+      $disable_files = array_merge($disable_files, $files);
+    }
+  }
+
+  $js = array_diff_key($js, $disable_files);
+}
+/**
+ * Implements hook_form_alter().
+ */
+function disable_js_form_system_theme_settings_alter(&$form, &$form_state, $form_id) {
+  if (isset($form_state['build_info']['args'][0]) && ($theme = $form_state['build_info']['args'][0])) {
+    $form['disablejs'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Disable js files'),
+    );
+
+    $form['disablejs']['disable_js_theme'] = array(
+      '#type' => 'value',
+      '#value' => $theme,
+    );
+
+    $form['disablejs']['disable_js_' . $theme . '_all'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Disable all js files from core and contrib modules.'),
+      '#default_value' => variable_get('disable_js_' . $theme . '_all', FALSE),
+    );
+
+    $form['disablejs']['modules'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Per module'),
+      '#description' => t('Disable all js files from selected modules.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+
+    $form['disablejs']['modules']['disable_js_' . $theme . '_modules'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Modules'),
+      '#options' => disable_js_get_modules_list(),
+      '#default_value' => variable_get('disable_js_' . $theme . '_modules', array()),
+    );
+
+    $form['disablejs']['files'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Specific js files'),
+      '#description' => t('Per file.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+
+    $form['disablejs']['files']['disable_js_' . $theme . '_files'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Disable specific js files.'),
+      '#options' => disable_js_get_js_list(),
+      '#default_value' => variable_get('disable_js_' . $theme . '_files', array()),
+    );
+
+    $form['#submit'][] = 'disable_js_form_submit';
+  }
+}
+
+function disable_js_form_submit($form, &$form_state) {
+  $theme = $form_state['values']['disable_js_theme'];
+
+  //all files
+  variable_set('disable_js_' . $theme . '_all', $form_state['values']['disable_js_' . $theme . '_all']);
+
+  //modules
+  $modules = array_filter($form_state['values']['disable_js_' . $theme . '_modules']);
+  variable_set('disable_js_' . $theme . '_modules', $modules);
+
+  //files
+  $files = array_filter($form_state['values']['disable_js_' . $theme . '_files']);
+  variable_set('disable_js_' . $theme . '_files', $files);
+}
+
+function disable_js_get_modules_list($options = FALSE) {
+  $modules = $options ? system_list('module_enabled') : module_list();
+  asort($modules);
+
+  return $modules;
+}
+
+function disable_js_get_js_list($filter = array()) {
+  $files = array();
+  $enabled_modules = disable_js_get_modules_list(TRUE);
+
+  if (count($filter)) {
+    $filter = array_combine($filter, $filter);
+    $modules = array_intersect_key($enabled_modules, $filter);
+  }
+  else {
+    $modules = $enabled_modules;
+  }
+
+  foreach ($modules as $name => $module) {
+    $module_path = pathinfo($module->filename, PATHINFO_DIRNAME);
+    $module_js_files = file_scan_directory($module_path, '/.*\.js$/');
+    foreach ($module_js_files as $path => $file) {
+      $files[$path] = $path;
+    }
+  }
+
+  return $files;
+}
