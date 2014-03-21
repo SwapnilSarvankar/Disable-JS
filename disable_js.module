@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Installation file for the Disable js module.
+ */
+ 
+/**
  * Implements hook_js_alter().
  */
 function disable_js_js_alter(&$js) {
@@ -83,14 +88,14 @@ function disable_js_form_system_theme_settings_alter(&$form, &$form_state, $form
 function disable_js_form_submit($form, &$form_state) {
   $theme = $form_state['values']['disable_js_theme'];
 
-  //all files
+  //All files.
   variable_set('disable_js_' . $theme . '_all', $form_state['values']['disable_js_' . $theme . '_all']);
 
-  //modules
+  //Modules.
   $modules = array_filter($form_state['values']['disable_js_' . $theme . '_modules']);
   variable_set('disable_js_' . $theme . '_modules', $modules);
 
-  //files
+  //Files.
   $files = array_filter($form_state['values']['disable_js_' . $theme . '_files']);
   variable_set('disable_js_' . $theme . '_files', $files);
 }
@@ -114,7 +119,7 @@ function disable_js_get_js_list($filter = array()) {
     $modules = $enabled_modules;
   }
 
-  foreach ($modules as $name => $module) {
+  foreach ($modules as $module) {
     $module_path = pathinfo($module->filename, PATHINFO_DIRNAME);
     $module_js_files = file_scan_directory($module_path, '/.*\.js$/');
     foreach ($module_js_files as $path => $file) {
