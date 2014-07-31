@@ -8,12 +8,8 @@
  * Implements hook_uninstall().
  */
 function disable_js_uninstall() {
-  $variables = db_select('variable', 'v')
-                ->condition('v.name', 'disable_js_%', 'LIKE')
-                ->fields('v', array('name'))
-                ->execute()
-                ->fetchAll();
-  foreach ($variables as $variable) {
-    variable_del($variable->name);
-  }
+  db_delete('variables')
+    ->condition('v.name', 'disable_js_%', 'LIKE')
+    ->execute();
+  cache_clear_all('variables', 'cache_bootstrap');
 }
